@@ -4,3 +4,7 @@ crystal: 0.35.1
 license: MIT
 authors:
   - Dave Goddard <dave@goddard.id.au>
+
+dependencies:
+  lingo:
+    github: rmosolgo/lingo
