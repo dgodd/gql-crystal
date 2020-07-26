@@ -15,33 +15,40 @@ end
 
 class QueryVisitor < Lingo::Visitor
   # Set up an accumulator
-  getter :path, :prefix, :code, :fields
-  setter :prefix, :code, :fields
+  getter :path, :prefix, :code, :fields, :types, :md5
+  setter :prefix, :code, :fields, :types, :md5
   def initialize
-    @path = [""] of String
-    @prefix = "  "
+    @path = ["", ""] of String
+    @prefix = "    "
     @code = ""
     @fields = [[] of String] of Array(String)
+    @types = Hash(String, String).new
+    @md5 = ""
   end
 
   enter(:outer) {
-    outer = "Outer#{Digest::MD5.hexdigest(node.full_value.to_s)}"
-    visitor.path[0] = outer
-    visitor.code += "class #{outer}\n"
+    visitor.md5 = Digest::MD5.hexdigest(node.full_value.to_s)
+    visitor.path[0] = "Outer#{visitor.md5}"
+    visitor.path[1] = "Inner#{visitor.md5}"
+    visitor.code += "class Outer#{visitor.md5}\n  class Inner#{visitor.md5}\n"
   }
 
   exit(:outer) {
-    visitor.code += "end\n"
+    visitor.fields.pop.each do |field|
+      type = visitor.types.fetch(field, "JSON::ANY::Type")
+      visitor.code += "#{visitor.prefix}property #{field.underscore} : #{type}\n"
+    end
+    visitor.code += "  end\n  property data Inner#{visitor.md5}\n  property errors JSON::ANY::Type\nend\n"
   }
 
   enter(:field_name) {
-    # visitor.code += "#{visitor.prefix}property #{node.full_value.to_s.underscore} : JSON::ANY::Type\n"
     visitor.path[visitor.path.size - 1] = node.full_value.to_s
     visitor.fields[visitor.fields.size - 1] << node.full_value.to_s
   }
 
   enter(:nested) {
-    visitor.code += "\n#{visitor.prefix}class #{visitor.path.last.camelcase}\n#{visitor.prefix}  include JSON::Serializable\n"
+    visitor.types[visitor.path.last] = visitor.path.last.camelcase
+    visitor.code += "#{visitor.prefix}class #{visitor.path.last.camelcase}\n#{visitor.prefix}  include JSON::Serializable\n"
     visitor.path << ""
     visitor.prefix += "  "
     visitor.fields << [] of String
@@ -52,7 +59,8 @@ class QueryVisitor < Lingo::Visitor
 
     fields = visitor.fields.pop
     fields.each do |field|
-      visitor.code += "#{visitor.prefix}property #{field.underscore} : JSON::ANY::Type\n"
+      type = visitor.types.fetch(field, "JSON::ANY::Type")
+      visitor.code += "#{visitor.prefix}property #{field.underscore} : #{type}\n"
     end
 
     visitor.prefix = visitor.prefix.chomp("  ")
