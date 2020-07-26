@@ -1,4 +1,5 @@
 require "lingo"
+require "digest/md5"
 
 class QueryParser < Lingo::Parser
   rule(:whitespace) { match(/\s+/) }
@@ -8,7 +9,7 @@ class QueryParser < Lingo::Parser
   rule(:field_whitespace) { field >> whitespace.maybe }
   rule(:nested) { str("{") >> whitespace.maybe >> field_whitespace.repeat.maybe >> whitespace.maybe >> str("}") }
   rule(:query) { str("query") >> whitespace.maybe >> args.maybe}
-  rule(:full) { whitespace.maybe >> query >> whitespace.maybe >> nested.maybe >> whitespace.maybe}
+  rule(:full) { whitespace.maybe >> query >> whitespace.maybe >> nested.named(:outer).maybe >> whitespace.maybe}
   root(:full)
 end
 
@@ -22,13 +23,19 @@ class QueryVisitor < Lingo::Visitor
     @code = ""
   end
 
-  def code_str
-    "class Outer\n#{code}end\n"
-  end
+  enter(:outer) {
+    outer = "Outer#{Digest::MD5.hexdigest(node.full_value.to_s)}"
+    visitor.path[0] = outer
+    visitor.code += "class #{outer}\n"
+  }
+
+  exit(:outer) {
+    visitor.code += "end\n"
+  }
 
   enter(:field_name) {
     # puts "ENTER: #{node.full_value}"
-    visitor.code += "#{visitor.prefix}property #{node.full_value.to_s.underscore} : JSON::Any:Type\n"
+    visitor.code += "#{visitor.prefix}property #{node.full_value.to_s.underscore} : JSON::ANY::Type\n"
     visitor.path[visitor.path.size - 1] = node.full_value.to_s
   }
 
@@ -71,4 +78,4 @@ ast = QueryParser.new.parse(%{
 })
 visitor = QueryVisitor.new
 visitor.visit(ast)
-puts "=====\n#{visitor.code_str}\n"
+puts "=====\n#{visitor.code}\n"
