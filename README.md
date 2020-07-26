@@ -1,6 +1,7 @@
 # GQL
 
 [![Build Status](https://travis-ci.org/dgodd/gql-crystal.svg?branch=main)](https://travis-ci.org/dgodd/gql-crystal)
+[![GitHub release](https://img.shields.io/github/release/dgodd/gql-crystal.svg)](https://github.com/dgodd/gql-crystal/releases)
 
 Creates simple Graphql clients
 
