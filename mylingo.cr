@@ -15,12 +15,13 @@ end
 
 class QueryVisitor < Lingo::Visitor
   # Set up an accumulator
-  getter :path, :prefix, :code
-  setter :prefix, :code
+  getter :path, :prefix, :code, :fields
+  setter :prefix, :code, :fields
   def initialize
     @path = [""] of String
     @prefix = "  "
     @code = ""
+    @fields = [[] of String] of Array(String)
   end
 
   enter(:outer) {
@@ -34,21 +35,28 @@ class QueryVisitor < Lingo::Visitor
   }
 
   enter(:field_name) {
-    # puts "ENTER: #{node.full_value}"
-    visitor.code += "#{visitor.prefix}property #{node.full_value.to_s.underscore} : JSON::ANY::Type\n"
+    # visitor.code += "#{visitor.prefix}property #{node.full_value.to_s.underscore} : JSON::ANY::Type\n"
     visitor.path[visitor.path.size - 1] = node.full_value.to_s
+    visitor.fields[visitor.fields.size - 1] << node.full_value.to_s
   }
 
   enter(:nested) {
     visitor.code += "\n#{visitor.prefix}class #{visitor.path.last.camelcase}\n#{visitor.prefix}  include JSON::Serializable\n"
     visitor.path << ""
     visitor.prefix += "  "
+    visitor.fields << [] of String
   }
 
   exit(:nested) {
+    visitor.path.pop
+
+    fields = visitor.fields.pop
+    fields.each do |field|
+      visitor.code += "#{visitor.prefix}property #{field.underscore} : JSON::ANY::Type\n"
+    end
+
     visitor.prefix = visitor.prefix.chomp("  ")
     visitor.code += "#{visitor.prefix}end\n"
-    visitor.path.pop
   }
 end
 
