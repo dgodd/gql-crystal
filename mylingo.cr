@@ -28,7 +28,7 @@ class QueryVisitor < Lingo::Visitor
 
   enter(:field_name) {
     # puts "ENTER: #{node.full_value}"
-    visitor.code += "#{visitor.prefix}property #{node.full_value.to_s.underscore}\n"
+    visitor.code += "#{visitor.prefix}property #{node.full_value.to_s.underscore} : JSON::Any:Type\n"
     visitor.path[visitor.path.size - 1] = node.full_value.to_s
   }
 
