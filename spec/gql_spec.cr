@@ -80,14 +80,14 @@ class FakeHttpClient
   end
 end
 
-@[GQL::Serializable::Options(root: true)]
+@[GQL::Serializable::Options]
 class SimpleQuery
   include GQL::Serializable
   property id : String
   property legacy_id : Int64
 end
 
-@[GQL::Serializable::Options(root: true, query_args: {first: Int, after: String})]
+@[GQL::Serializable::Options(query_args: {first: Int, after: String})]
 class RootQuery
   include GQL::Serializable
 

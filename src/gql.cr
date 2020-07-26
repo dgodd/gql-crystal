@@ -40,7 +40,7 @@ module GQL
       end
 
       {% options = @type.annotation(::GQL::Serializable::Options) %}
-      {% if options && options[:root] %}
+      {% if options %}
       {% root = @type %}
       class Outer
         include GQL::Serializable

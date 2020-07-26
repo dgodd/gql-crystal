@@ -23,7 +23,7 @@ Creates simple Graphql clients
 require "http/client"
 require "gql"
 
-@[GQL::Serializable::Options(root: true, query_args: {updatedSince: ISO8601DateTime, first: Int, after: String})]
+@[GQL::Serializable::Options(query_args: {updatedSince: ISO8601DateTime, first: Int, after: String})]
 class AdvertSearch
   include GQL::Serializable
 
