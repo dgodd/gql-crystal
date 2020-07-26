@@ -18,7 +18,7 @@ class QueryVisitor < Lingo::Visitor
   getter :path, :prefix, :code, :fields, :types, :md5
   setter :prefix, :code, :fields, :types, :md5
   def initialize
-    @path = ["", ""] of String
+    @path = [""] of String
     @prefix = "    "
     @code = ""
     @fields = [[] of String] of Array(String)
@@ -29,16 +29,18 @@ class QueryVisitor < Lingo::Visitor
   enter(:outer) {
     visitor.md5 = Digest::MD5.hexdigest(node.full_value.to_s)
     visitor.path[0] = "Outer#{visitor.md5}"
-    visitor.path[1] = "Inner#{visitor.md5}"
     visitor.code += "class Outer#{visitor.md5}\n  class Inner#{visitor.md5}\n"
   }
 
   exit(:outer) {
+    visitor.code += "  class Inner#{visitor.md5}\n"
     visitor.fields.pop.each do |field|
       type = visitor.types.fetch(field, "JSON::ANY::Type")
       visitor.code += "#{visitor.prefix}property #{field.underscore} : #{type}\n"
     end
-    visitor.code += "  end\n  property data Inner#{visitor.md5}\n  property errors JSON::ANY::Type\nend\n"
+    visitor.code += "    property data Outer#{visitor.md5}\n"
+    visitor.code += "    property errors JSON::ANY::Type\n"
+    visitor.code += "  end\n"
   }
 
   enter(:field_name) {
